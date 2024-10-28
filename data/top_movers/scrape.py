@@ -9,7 +9,22 @@ from bs4 import BeautifulSoup
 
 def scrape_data(url : str, run_date=dt.datetime.now().date()) -> pd.DataFrame:
     """
-    ...
+    Scrapes pre-market gainers and losers data from a Stock Market Watch webpage.
+
+    Args:
+        url (str): The URL of the Stock Market Watch page to scrape.
+        run_date (datetime.date, optional): The date of the scraping run. 
+            Defaults to current date.
+
+    Returns:
+        pd.DataFrame: A DataFrame containing the scraped data with the following:
+            - Multi-index: (date, type) where type is 'G' for gainers or 'L' for losers
+            - Columns: Stock information including ticker, price, change, etc. 
+              (as provided by the website)
+
+    Example:
+        >>> url = 'https://thestockmarketwatch.com/markets/pre-market/today.aspx'
+        >>> df = scrape_data(url)
     """
 
     #  Define helper function
