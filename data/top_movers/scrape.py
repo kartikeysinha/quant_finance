@@ -65,13 +65,44 @@ def scrape_data(url : str, run_date=dt.datetime.now().date()) -> pd.DataFrame:
     return df
 
 
+def run_data_process(run_date : dt.date, file_loc : str, file_name : str) -> None:
+    """
+    ...
+    """
+
+    # get new data
+    url = 'https://thestockmarketwatch.com/markets/pre-market/today.aspx'
+    new_df = scrape_data(url, run_date=run_date)
+
+    # read in existing data
+    df = pd.read_csv(file_loc + file_name + '.csv')
+    df.to_csv(file_loc + file_name + '_tmp.csv')        # storing tmp file as we'll overwrite
+    df.set_index(['date', 'type'], inplace=True)
+
+    # compare new data vs existing data to ensure new data is being added.
+    # For now, we do one run per day, so we shouldn't have overlapping dates.
+    # We can identify duplicates using the `date` column.
+    if df.index.__contains__(run_date.strftime('%Y-%m-%d')):
+        usr_res = input(f"Are you sure you want to overwrite the data for {run_date.strftime('%Y-%m-%d')}? Y or N?")
+
+        if usr_res.lower().startswith('n'):
+            print("Aborting data process based on user request.")
+            return
+    
+        df.drop('2024-10-27', axis='index', inplace=True)
+    
+    # combine new data with old
+    full_df = pd.concat([df, new_df], axis=0)
+
+    # store csv
+    full_df.to_csv(file_loc + file_name + '.csv')
+
+    return
+
+
+
 if __name__ == '__main__':
     run_date = dt.datetime.now()
 
-    # scrape today's data
-    url = 'https://thestockmarketwatch.com/markets/pre-market/today.aspx'
-    df = scrape_data(url, run_date=run_date.date())
-
-    # for now, store the file
-    file_name = f"top_movers_{run_date.strftime('%Y%m%d')}.csv"
-    df.to_csv(f"./archive/{file_name}")
+    file_loc = '/Users/kartikeysinha/Desktop/ktk_dev.nosync/github/quant_finance/data/top_movers/archive/'       # TODO: store part of path as environment variable.
+    run_data_process(run_date=run_date.date(), file_loc=file_loc, file_name='top_movers')
