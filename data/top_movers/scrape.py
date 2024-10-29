@@ -89,7 +89,7 @@ def run_data_process(run_date : dt.date, file_loc : str, file_name : str) -> Non
             print("Aborting data process based on user request.")
             return
     
-        df.drop('2024-10-27', axis='index', inplace=True)
+        df.drop(run_date.strftime('%Y-%m-%d'), axis='index', inplace=True)
     
     # combine new data with old
     full_df = pd.concat([df, new_df], axis=0)
