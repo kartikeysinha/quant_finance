@@ -6,6 +6,8 @@ import pandas as pd
 import datetime as dt
 import requests
 from bs4 import BeautifulSoup
+from inputimeout import inputimeout
+
 
 def scrape_data(url : str, run_date=dt.datetime.now().date()) -> pd.DataFrame:
     """
@@ -61,13 +63,32 @@ def scrape_data(url : str, run_date=dt.datetime.now().date()) -> pd.DataFrame:
     df = pd.concat(frames, axis=0)
     df['date'] = run_date
     df.set_index(['date', 'type'], inplace=True)
+    df['%Chg'] = df['%Chg'].str.rstrip('%').astype('float64')
+    df['Volume'] = df['Volume'].str.rstrip('k').astype('float64') * 1000
 
     return df
 
-
 def run_data_process(run_date : dt.date, file_loc : str, file_name : str) -> None:
     """
-    ...
+    Process and update top movers data by combining new scraped data with existing historical data.
+
+    Args:
+        run_date (dt.date): The date for which to scrape and process data
+        file_loc (str): Directory path where the data files are stored
+        file_name (str): Base name of the CSV file (without extension)
+
+    Returns:
+        None: The function saves the updated data to a CSV file but doesn't return anything
+
+    Notes:
+        - Creates a temporary backup file before processing
+        - Checks for existing data on the run_date and prompts for confirmation before overwriting
+        - Combines new scraped data with historical data and saves to CSV
+    
+    Example:
+        >>> run_date = dt.datetime.now().date()
+        >>> file_loc = '/path/to/data/directory/'
+        >>> run_data_process(run_date, file_loc, 'top_movers')
     """
 
     # get new data
@@ -83,7 +104,12 @@ def run_data_process(run_date : dt.date, file_loc : str, file_name : str) -> Non
     # For now, we do one run per day, so we shouldn't have overlapping dates.
     # We can identify duplicates using the `date` column.
     if df.index.__contains__(run_date.strftime('%Y-%m-%d')):
-        usr_res = input(f"Are you sure you want to overwrite the data for {run_date.strftime('%Y-%m-%d')}? Y or N?")
+        # Wait 5s for user's response
+        prompt = f"Are you sure you want to overwrite the data for {run_date.strftime('%Y-%m-%d')}? Y or N?\n"
+        try:
+            usr_res = inputimeout(prompt, 5)
+        except:
+            usr_res = 'n'       # default to 'no'
 
         if usr_res.lower().startswith('n'):
             print("Aborting data process based on user request.")
@@ -98,8 +124,6 @@ def run_data_process(run_date : dt.date, file_loc : str, file_name : str) -> Non
     full_df.to_csv(file_loc + file_name + '.csv')
 
     return
-
-
 
 if __name__ == '__main__':
     run_date = dt.datetime.now()
