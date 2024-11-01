@@ -12,7 +12,7 @@ from waybackpy import WaybackMachineCDXServerAPI
 import quant_finance.data.top_movers.scrape as sc
 
 
-def backfill_top_movers(
+def backfill_archived_data(
         start_date : dt.datetime, 
         end_date : dt.datetime, 
         base_url : str = "https://thestockmarketwatch.com/markets/pre-market/today.aspx",
