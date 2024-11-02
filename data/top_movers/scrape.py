@@ -2,6 +2,7 @@
 Scrape the top pre-market gainers and losers from Stock Market Watch.
 """
 
+import os
 import pandas as pd
 import datetime as dt
 import requests
@@ -68,6 +69,93 @@ def scrape_data(url : str, run_date=dt.datetime.now().date()) -> pd.DataFrame:
 
     return df
 
+
+def is_df_subset(new_df, df):
+    """
+    check if new_df is a subset of df
+    """
+    merged_df = new_df.merge(df, how='left', indicator=True)
+    return merged_df['_merge'].eq('both').all()
+
+
+def find_unique_data(new_df, old_df):
+    """
+    Merge 2 dataframes, ensuring all the entries are unique. 
+    If data exists in both dataframes, delete data from old
+    """
+    df = old_df.merge(new_df, how='left', indicator=True)
+    return df[df['_merge'] == 'left_only'].drop(columns=['_merge'])
+
+
+def update_stored_data(
+        new_data :pd.DataFrame,  
+        old_data: pd.DataFrame = None, 
+        file_path :str = None,
+        file_name :str = None,
+        cols_to_compare :list[str] = None
+    ) -> pd.DataFrame:
+    """
+    Update old data. Run some quality checks before.
+    """
+    
+    assert (old_data is not None) or (file_path is not None), "please provide old_data or file_path"
+
+    if old_data is None:
+        old_data = pd.read_csv(file_path + file_name)
+    elif isinstance(old_data.index, pd.RangeIndex):
+        old_data = old_data.reset_index(drop=True)
+    else:
+        old_data = old_data.reset_index(drop=False)
+
+    if file_path:
+        fp = os.path.join(file_path, file_name.split('.')[0] + '_temp.csv')
+        print(file_path, fp)
+        old_data.to_csv( fp )      # store old data in temp file 
+
+    # reset new data index if needed
+    if isinstance(new_data.index, pd.RangeIndex):
+        print('here')
+        print(isinstance(new_data.index, pd.RangeIndex))
+        print(new_data.index.name)
+        new_data = new_data.reset_index(drop=True)
+    else:
+        new_data = new_data.reset_index(drop=False)
+
+    if cols_to_compare is None or len(cols_to_compare) == 0:
+        cols_to_compare = new_data.columns
+    
+    # check if new_data is a subset of old_data
+    if is_df_subset(new_data[cols_to_compare], old_data[cols_to_compare]):
+        # Ask user if they want to overwrite data
+        prompt = f"The new_df has duplicates based on cols_to_compare. Do you want to overwrite the data? Y or N?\n"
+        try:
+            usr_res = inputimeout(prompt, 5)
+        except:
+            usr_res = 'n'       # default to 'no'
+
+        if usr_res.lower().startswith('n'):
+            print("Aborting data process based on user request.")
+            return
+
+        # override
+        tmp_df = find_unique_data(new_data[cols_to_compare], old_data[cols_to_compare])
+        if len(cols_to_compare) > 0 and len(cols_to_compare) < len(new_data.columns):
+            retval = tmp_df.merge(old_data, how='left')
+            old_data = retval.loc[~retval.duplicated()].reset_index(drop=True)
+        else:
+            old_data = tmp_df
+    
+    comb_df = pd.concat([old_data, new_data], axis=0).reset_index(drop=True)
+
+    if len(cols_to_compare) > 0 and len(cols_to_compare) < len(new_data.columns):
+        comb_df.set_index(cols_to_compare, inplace=True)
+
+    if file_path:
+        comb_df.to_csv(file_path + file_name)
+
+    return comb_df
+    
+
 def run_data_process(run_date : dt.date, file_loc : str, file_name : str) -> None:
     """
     Process and update top movers data by combining new scraped data with existing historical data.
@@ -95,38 +183,23 @@ def run_data_process(run_date : dt.date, file_loc : str, file_name : str) -> Non
     url = 'https://thestockmarketwatch.com/markets/pre-market/today.aspx'
     new_df = scrape_data(url, run_date=run_date)
 
-    # read in existing data
-    df = pd.read_csv(file_loc + file_name + '.csv')
-    df.to_csv(file_loc + file_name + '_tmp.csv')        # storing tmp file as we'll overwrite
-    df.set_index(['date', 'type'], inplace=True)
-
-    # compare new data vs existing data to ensure new data is being added.
-    # For now, we do one run per day, so we shouldn't have overlapping dates.
-    # We can identify duplicates using the `date` column.
-    if df.index.__contains__(run_date.strftime('%Y-%m-%d')):
-        # Wait 5s for user's response
-        prompt = f"Are you sure you want to overwrite the data for {run_date.strftime('%Y-%m-%d')}? Y or N?\n"
-        try:
-            usr_res = inputimeout(prompt, 5)
-        except:
-            usr_res = 'n'       # default to 'no'
-
-        if usr_res.lower().startswith('n'):
-            print("Aborting data process based on user request.")
-            return
-    
-        df.drop(run_date.strftime('%Y-%m-%d'), axis='index', inplace=True)
-    
-    # combine new data with old
-    full_df = pd.concat([df, new_df], axis=0)
-
-    # store csv
-    full_df.to_csv(file_loc + file_name + '.csv')
+    _ = update_stored_data(new_data=new_df, file_path=file_loc, file_name=file_name + '.csv', cols_to_compare=['date', 'type'])
 
     return
+
 
 if __name__ == '__main__':
     run_date = dt.datetime.now()
 
     file_loc = '/Users/kartikeysinha/Desktop/ktk_dev.nosync/github/quant_finance/data/top_movers/archive/'       # TODO: store part of path as environment variable.
     run_data_process(run_date=run_date.date(), file_loc=file_loc, file_name='top_movers')
+
+    # # testing
+    # cur_df = pd.read_csv(file_loc + 'top_movers.csv', index_col=0)
+
+    # new_df = cur_df.loc['2024-10-31']
+    # old_df = cur_df.loc['2024-10-31']
+
+    # ret = update_stored_data(new_data=new_df, old_data=cur_df, cols_to_compare=['date', 'type'])
+    # print(ret)
+    # print(ret.equals(cur_df.set_index('type', append=True)))
