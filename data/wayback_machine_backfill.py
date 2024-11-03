@@ -8,6 +8,7 @@ This is imperfect as wayback doesn't always have
 import datetime as dt
 import pandas as pd
 from waybackpy import WaybackMachineCDXServerAPI
+import concurrent.futures
 
 import quant_finance.data.top_movers.scrape as sc
 
@@ -43,23 +44,29 @@ def backfill_archived_data(
     weekdays = pd.bdate_range(start_date, end_date)
     frames = []
 
-    for cur_date in weekdays:
+    def fetch_data_for_date(cur_date):
+        """
+        helper function to fetch and process data for one date from the wayback machine. 
+        """
         cur_date = cur_date.to_pydatetime()
+        try:
+             # get the nearest url
+            nearest_url = wbm.near(year=cur_date.year, month=cur_date.month, day=cur_date.day)
 
-        # get the nearest url
-        nearest_url = wbm.near(year=cur_date.year, month=cur_date.month, day=cur_date.day)
+            # check if the url is of that day itself
+            if nearest_url.datetime_timestamp.date() != cur_date.date():
+                return None
+            
+            return scrape_func(url=nearest_url.archive_url, run_date=cur_date)
+        except Exception as e:
+            print(f"Error processing {cur_date}: {str(e)}")
+            return None
 
-        # check if the url is of that day itself
-        if nearest_url.datetime_timestamp.date() != cur_date.date():
-            continue
-
-        # get data
-        cur_date_df = scrape_func(url=nearest_url.archive_url, run_date=cur_date)
-
-        # Store data so it can be combined later.
-        frames.append(cur_date_df)
-
-
+    # Use multi-threading to get data
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as exec:
+        results = exec.map(fetch_data_for_date, weekdays)
+        frames = [df for df in results if df is not None]
+    
     if len(frames) == 0:
         print("No relevant data found.")
         return pd.DataFrame()
