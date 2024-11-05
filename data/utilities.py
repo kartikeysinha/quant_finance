@@ -6,8 +6,6 @@ import os
 import pandas as pd
 from inputimeout import inputimeout
 
-import quant_finance.data.top_movers.scrape as sc
-
 """
 Functions around loading data in .csv files.
 """
