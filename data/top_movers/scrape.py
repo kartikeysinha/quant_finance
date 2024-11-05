@@ -63,6 +63,7 @@ def scrape_data(url : str, run_date=dt.datetime.now().date()) -> pd.DataFrame:
 
     df = pd.concat(frames, axis=0)
     df['date'] = run_date
+    df['date'] = pd.to_datetime(df['date'])
     df.set_index(['date', 'type'], inplace=True)
     df['%Chg'] = df['%Chg'].str.rstrip('%').astype('float64')
     df['Volume'] = df['Volume'].str.rstrip('k').astype('float64') * 1000
