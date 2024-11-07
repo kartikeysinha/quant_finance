@@ -76,7 +76,7 @@ def update_stored_data(
         # delete from old data
         old_data.drop(common_indices, axis=0, inplace=True)
         
-    comb_df = pd.concat([old_data, new_data], axis=0)
+    comb_df = pd.concat([old_data, new_data], axis=0).sort_index()
 
     if file_path:
         comb_df.to_csv(file_path + file_name)
