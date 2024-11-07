@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 
 import quant_finance.data.utilities as data_utils
 
+BASE_URL = 'https://thestockmarketwatch.com/markets/pre-market/today.aspx'
 
 def scrape_data(url : str, run_date=dt.datetime.now().date()) -> pd.DataFrame:
     """
@@ -95,7 +96,7 @@ def run_data_process(run_date : dt.date, file_loc : str, file_name : str) -> Non
     """
 
     # get new data
-    url = 'https://thestockmarketwatch.com/markets/pre-market/today.aspx'
+    url = BASE_URL
     new_df = scrape_data(url, run_date=run_date)
 
     _ = data_utils.update_stored_data(new_data=new_df, file_path=file_loc, file_name=file_name + '.csv', cols_to_compare=['date', 'type', 'Symb'])
