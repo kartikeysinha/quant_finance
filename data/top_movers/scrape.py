@@ -7,6 +7,7 @@ import datetime as dt
 import requests
 from bs4 import BeautifulSoup
 
+from quant_finance import *
 import quant_finance.data.utilities as data_utils
 
 BASE_URL = 'https://thestockmarketwatch.com/markets/pre-market/today.aspx'
@@ -107,7 +108,7 @@ def run_data_process(run_date : dt.date, file_loc : str, file_name : str) -> Non
 if __name__ == '__main__':
     run_date = dt.datetime.now()
 
-    file_loc = '/Users/kartikeysinha/Desktop/ktk_dev.nosync/github/quant_finance/data/top_movers/archive/'       # TODO: store part of path as environment variable.
+    file_loc = DATA_DIR + "top_movers/archive/"
     run_data_process(run_date=run_date.date(), file_loc=file_loc, file_name='top_movers')
 
     # # testing
