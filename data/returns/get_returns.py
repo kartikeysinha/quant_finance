@@ -48,6 +48,10 @@ def get_cnadles_from_yf(tickers, store_data=False):
     return df
 
 
+def calculate_returns(prices : pd.DataFrame):
+    ...
+
+
 def get_returns(tickers : str | list[str], start_date : str | dt.datetime, end_date : str | dt.datetime):
     """
     Calculated based on the Adj. Close prices for the ticker.
