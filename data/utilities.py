@@ -7,7 +7,7 @@ import pandas as pd
 from inputimeout import inputimeout
 
 """
-Functions around loading data in .csv files.
+Functions around loading data in pickle files.
 """
 
 def _fix_indices(df : pd.DataFrame) -> None:
@@ -38,7 +38,7 @@ def update_stored_data(
     assert (old_data is not None) or (file_path is not None), "please provide old_data or file_path"
 
     if old_data is None:
-        old_data = pd.read_csv(file_path + file_name)
+        old_data = pd.read_pickle(file_path + file_name)
         if 'date' in old_data.columns:
             old_data['date'] = pd.to_datetime(old_data['date'])
     
@@ -47,8 +47,8 @@ def update_stored_data(
 
     # Store a copy in the given file_path (if provided) in case process fails.
     if file_path:
-        fp = os.path.join(file_path, file_name.split('.')[0] + '_temp.csv')
-        old_data.to_csv( fp )      # store old data in temp file 
+        fp = os.path.join(file_path, file_name.split('.')[0] + '_temp.pickle')
+        old_data.to_pickle( fp )      # store old data in temp file 
 
     if cols_to_compare is None or len(cols_to_compare) == 0:
         cols_to_compare = new_data.columns
@@ -79,6 +79,6 @@ def update_stored_data(
     comb_df = pd.concat([old_data, new_data], axis=0).sort_index()
 
     if file_path:
-        comb_df.to_csv(file_path + file_name)
+        comb_df.to_pickle(file_path + file_name)
 
     return comb_df
