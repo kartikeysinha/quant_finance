@@ -100,7 +100,7 @@ def run_data_process(run_date : dt.date, file_loc : str, file_name : str) -> Non
     url = BASE_URL
     new_df = scrape_data(url, run_date=run_date)
 
-    _ = data_utils.update_stored_data(new_data=new_df, file_path=file_loc, file_name=file_name + '.csv', cols_to_compare=['date', 'type', 'Symb'])
+    _ = data_utils.update_stored_data(new_data=new_df, file_path=file_loc, file_name=file_name + '.pickle', cols_to_compare=['date', 'type', 'Symb'])
 
     return
 
