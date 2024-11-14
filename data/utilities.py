@@ -25,7 +25,7 @@ def _fix_indices(df : pd.DataFrame) -> None:
 
 
 def update_stored_data(
-        new_data :pd.DataFrame,  
+        data :pd.DataFrame,  
         old_data: pd.DataFrame = None, 
         file_path :str = None,
         file_name :str = None,
@@ -34,6 +34,8 @@ def update_stored_data(
     """
     Update old data. Run some quality checks before.
     """
+
+    new_data = data.copy()
     
     assert (old_data is not None) or (file_path is not None), "please provide old_data or file_path"
     assert (not file_name.endswith(".csv"))

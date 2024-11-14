@@ -20,7 +20,7 @@ hist_df = wm_bfill.backfill_archived_data(
 print(hist_df)
 
 _ = data_utils.update_stored_data(
-    new_data=hist_df, 
+    data=hist_df, 
     file_path=DATA_DIR + 'top_movers/archive/', 
     file_name='top_movers.csv', 
     cols_to_compare=['date', 'type', 'Symb']

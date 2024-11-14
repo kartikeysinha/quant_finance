@@ -100,7 +100,7 @@ def run_data_process(run_date : dt.date, file_loc : str, file_name : str) -> Non
     url = BASE_URL
     new_df = scrape_data(url, run_date=run_date)
 
-    _ = data_utils.update_stored_data(new_data=new_df, file_path=file_loc, file_name=file_name + '.pickle', cols_to_compare=['date', 'type', 'Symb'])
+    _ = data_utils.update_stored_data(data=new_df, file_path=file_loc, file_name=file_name + '.pickle', cols_to_compare=['date', 'type', 'Symb'])
 
     return
 
@@ -110,13 +110,3 @@ if __name__ == '__main__':
 
     file_loc = DATA_DIR + "top_movers/archive/"
     run_data_process(run_date=run_date.date(), file_loc=file_loc, file_name='top_movers')
-
-    # # testing
-    # cur_df = pd.read_csv(file_loc + 'top_movers.csv', index_col=0)
-
-    # new_df = cur_df.loc['2024-10-31']
-    # old_df = cur_df.loc['2024-10-31']
-
-    # ret = update_stored_data(new_data=new_df, old_data=cur_df, cols_to_compare=['date', 'type'])
-    # print(ret)
-    # print(ret.equals(cur_df.set_index('type', append=True)))

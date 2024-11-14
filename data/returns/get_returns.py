@@ -53,7 +53,7 @@ def get_candles_from_yf(tickers : list[str] , store_data : bool = False) -> pd.D
 
     if store_data:
         data_utils.update_stored_data(
-            new_data=df, file_path=DATA_DIR+'returns/archive/', file_name='candles', cols_to_compare=['Ticker', 'Date', 'Adj. Close']
+            data=df, file_path=DATA_DIR+'returns/archive/', file_name='candles', cols_to_compare=['Ticker', 'Date', 'Adj Close']
         )
         
     return df
@@ -78,7 +78,7 @@ def calculate_returns(prices : pd.Series | pd.DataFrame):
     if len(prices.index.names) == 1:
         # Wide format -> long format
         prices = prices.stack(future_stack=True)
-
+    
     returns = prices.groupby('Ticker').pct_change(fill_method=None)     # normal returns
     returns.columns = ['returns']
     log_returns = np.log(prices / prices.groupby('Ticker').shift(1))    # log returns
@@ -112,10 +112,10 @@ def get_returns_from_yf(tickers : list[str], store_data : bool, col_to_use : str
 
     if store_data:
         data_utils.update_stored_data(
-            new_data=returns, file_path=DATA_DIR+'returns/archive/', file_name='returns', cols_to_compare=['Ticker', 'Date', 'Adj. Close']
+            data=returns, file_path=DATA_DIR+'returns/archive/', file_name='returns', cols_to_compare=['Ticker', 'Date', 'returns']
         )
         data_utils.update_stored_data(
-            new_data=log_returns, file_path=DATA_DIR+'returns/archive/', file_name='log_returns', cols_to_compare=['Ticker', 'Date', 'Adj. Close']
+            data=log_returns, file_path=DATA_DIR+'returns/archive/', file_name='log_returns', cols_to_compare=['Ticker', 'Date', 'log_returns']
         )
     
     return pd.concat([returns, log_returns], axis=1, ignore_index=False)
