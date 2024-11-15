@@ -41,10 +41,16 @@ def get_candles_from_yf(tickers : list[str] , store_data : bool = False) -> pd.D
 
     # get the returns from Yahoo Finance
     try:
-        df = yf.download(tickers=tickers, period='max').stack(future_stack=True)
+        df = yf.download(tickers=tickers, period='max')
     except:
         print("Getting data from yfinance failed.")
         raise
+
+    if not isinstance(df.columns, pd.MultiIndex):
+        # Convert to MultiIndex DataFrame
+        df.columns = pd.MultiIndex.from_product([df.columns, [tickers[0].upper()]], names=['Price', 'Ticker'])
+    
+    df = df.stack(future_stack=True)
 
     # Format the dataframe as desired
     df.index = df.index.swaplevel()     # ensure the ticker is the first index
@@ -121,20 +127,31 @@ def get_returns_from_yf(tickers : list[str], store_data : bool, col_to_use : str
     return pd.concat([returns, log_returns], axis=1, ignore_index=False)
 
 
-def get_returns(tickers : str | list[str], start_date : str | dt.datetime, end_date : str | dt.datetime):
+def get_returns(tickers : str | list[str], start_date : str | dt.datetime, end_date : str | dt.datetime, download_new_data : bool = True):
     """
     Calculated based on the Adj. Close prices for the ticker.
     """
 
     # read returns
-    ...
+    existing_returns = pd.read_pickle(DATA_DIR + "returns/archive/returns.pickle")
 
     # check if all tickers exist between start_date and end_date in dataframe
-    ...
+    tickers = [x.upper() for x in tickers]
+    existing_tickers = set(existing_returns.index.get_level_values("Ticker").to_list())
 
+    tickers_to_download = []
+    for t in tickers:
+        if t not in existing_tickers or existing_returns.xs(t, level="Ticker").index[-1][0] < end_date:
+            tickers_to_download.append(t)
+        
     # If any don't exist, try installing them from yahoo finances
-    ...
+    if download_new_data and len(tickers_to_download) > 0:
+        print(f"Downloading data for: {', '.join(list(tickers))}")
+        _ = get_returns_from_yf(list(tickers), store_data = True)
+        existing_returns = pd.read_pickle(DATA_DIR + "returns/archive/returns.pickle")
+    
+    # Get the exising tickers within the timeframe interested.
+    existing_ticker_returns = existing_returns.loc[pd.IndexSlice[tickers, start_date:end_date], :]
 
-    # return the tickers within the start and end date
-    ...
+    return existing_ticker_returns
 
